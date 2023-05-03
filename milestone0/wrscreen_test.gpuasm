@@ -1,0 +1,8 @@
+mov r0, 1
+mov r1, 0
+mov r2, 0
+mov r3, 0
+movs s_r0, 64
+movs s_r1, 64
+wrscreen
+publish

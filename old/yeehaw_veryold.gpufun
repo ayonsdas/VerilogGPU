@@ -1,0 +1,53 @@
+# mov blue, 0 # no blue
+blue = 0
+depth = 0
+r5 = 255
+
+int x = 0
+int y = 0
+int increment = 32 # amount to increment
+int maxX = 255 # max x
+
+
+r12 = 255 # y max
+int yIncrement = 1
+r13 = yIncrement
+
+r14 = y
+lte r11, r14, r12 # r11 = (bool) y < 255
+while(r11){
+    
+    x = 0 # x
+
+    r8 = x
+    r9 = maxX
+    movidx r10 # r10 = thread index
+    add r8, r8, r10 # r8 = x + thread index
+    lte r8, r8, r9 # r8 = (bool) r8 < r9
+    while(r8){
+        ld r4, x # r4 = mem[0] = 0-31 lookup table
+        div r0, r4, r5 # r0 = r4 / r5 scales from 0-255 to 0-1
+        // r1 = 0 # y = 0
+        r1 = y
+        div r1, r1, r5 # r1 = r1 / r5 scales from 0-255 to 0-1
+        wrscreen # write pixel
+
+        // increment x
+        adds x, x, increment
+        r8 = x
+        r9 = maxX
+        movidx r10 # r10 = thread index
+        add r8, r8, r10 # r8 = x + thread index
+        // check if x < 256
+        lte r8, r8, r9 # r8 = (bool) r8 < r9
+    }
+
+    // increment y
+    adds y, y, yIncrement
+    r14 = y
+    lte r11, r14, r12 # r11 = (bool) y < 255
+}
+
+r0 = 0
+deli x
+int z = 0

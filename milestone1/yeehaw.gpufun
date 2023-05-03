@@ -1,0 +1,54 @@
+blue = 0
+depth = 0
+
+vec scale255 = 255
+
+x = 0
+y = 0
+int increment = 32 # amount to increment
+int maxX = 255 # max x
+
+
+vec yMax = 255 # y max
+int yIncrement = 1
+vec yIncV = yIncrement
+
+vec yV = y
+vec yInBound = 0
+lte yInBound, yV, yMax # yInBound = (bool) y < 255
+while(yInBound){
+    
+    x = 0 # x
+
+    vec xV = 0
+    vec maxXV = maxX
+    vec threadId = 0
+    vec xInBound = 0
+    
+    xV = x
+    movidx threadId # threadId = thread index
+    add xV, xV, threadId # xV = x + thread index
+    lte xInBound, xV, maxXV # xInBound = (bool) xV <= maxXV
+    while(xInBound){
+        div red, xV, scale255
+        green = y
+        div green, green, scale255
+        wrscreen # write pixel
+
+        // increment x
+        adds x, x, increment
+        xV = x
+        movidx threadId # threadId = thread index
+        add xV, xV, threadId # xV = x + thread index
+        lte xInBound, xV, maxXV # xInBound = (bool) xV <= maxXV
+    }
+
+    // increment y
+    adds y, y, yIncrement
+    yV = y
+    lte yInBound, yV, yMax # yInBound = (bool) y < 255
+}
+
+deli maxX
+int z = 0
+publish

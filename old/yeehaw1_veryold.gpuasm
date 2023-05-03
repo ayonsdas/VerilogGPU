@@ -1,0 +1,50 @@
+mov r2, 0
+mov r3, 0
+mov r5, 255
+movs s_r0, 0
+movs s_r1, 0
+movs s_r2, 32
+movs s_r3, 255
+mov r12, 255
+movs s_r4, 1
+movl r13, s_r4
+movl r14, s_r1
+lte r11, r14, r12
+pushmask
+andmask r11
+jmpnotmask while_end0
+while_start0:
+movs s_r0, 0
+movl r8, s_r0
+movl r9, s_r3
+movidx r10
+add r8, r8, r10
+lte r8, r8, r9
+pushmask
+andmask r8
+jmpnotmask while_end1
+while_start1:
+ld r4, s_r0
+div r0, r4, r5
+movl r1, s_r1
+div r1, r1, r5
+wrscreen
+adds s_r0, s_r0, s_r2
+movl r8, s_r0
+movl r9, s_r3
+movidx r10
+add r8, r8, r10
+lte r8, r8, r9
+andmask r8
+jmpmask while_start1
+while_end1:
+popmask
+adds s_r1, s_r1, s_r4
+movl r14, s_r1
+lte r11, r14, r12
+andmask r11
+jmpmask while_start0
+while_end0:
+popmask
+mov r0, 0
+movs s_r0, 0

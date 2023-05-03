@@ -1,0 +1,131 @@
+# adds s_rt, s_ra, s_rb // s_rt = s_ra + s_rb (uint16)
+# subs s_rt, s_ra, s_rb // s_rt = s_ra - s_rb (uint16)
+# muls s_rt, s_ra, s_rb // s_rt = s_ra * s_rb (uint16)
+# divs s_rt, s_ra, s_rb // s_rt = s_ra / s_rb (uint16)
+# add rt, ra, rb // rt = ra + rb
+# sub rt, ra, rb // rt = ra - rb
+# mul rt, ra, rb // rt = ra * rb
+# div rt, ra, rv // rt = ra / rb
+
+# mov rt, imm16 (half-precision floating point) // rt = imm16 for all 32 elements
+# movs s_rt, imm16 // s_rt = imm16
+# movl rt, s_ra // fills all threads of rt with value s_ra mod 2048 converted to float16
+# ld rt, s_ra //load vector at address s_ra to rt (copy paste raw memory)
+# ldall rt, s_ra //fills all threads of rt with 16-bit value at address s_ra
+# st s_rt, ra // mem[s_rt] (16*32 bits) = ra
+# sts s_rt, s_ra //mem[s_rt] (16 bits) = s_ra
+
+# pushmask // pushes the current mask
+# popmask // pops from the mask stack to current mask
+# peekmask ra // copies the top of the mask stack to the vector register ra
+# andmask ra // ands the current mask with ra (elementwise)
+# andmasks s_ra // ands the current mask with s_ra
+# invertmask // inverts the current mask
+# jmpmask imm16 // jumps if at least 1 bit of the mask
+# jmpnotmask imm16 // jumps if no bits of the mask
+
+# ands s_rt, s_ra, s_rb
+# ors s_rt, s_ra, s_rb
+# nots s_rt, s_ra
+# gts (s_rt = s_ra > s_rb, s_rt=bool, s_ra,s_rb=int)
+# lts (s_rt = s_ra < s_rb, s_rt=bool, s_ra,s_rb=int)
+# gtes (s_rt = s_ra >= s_rb, s_rt=bool, s_ra,s_rb=int)
+# ltes (s_rt = s_ra <= s_rb, s_rt=bool, s_ra,s_rb=int)
+
+
+
+# wrscreen // no parameters, writes 32 pixels in a row to the screen with red=r0, green=r1, blue=r2, depth=r3, x=s_r0, y=s_r1
+
+
+#         # handle green
+
+#         # mem[0-255] contains lookup table
+#         # get start index = j
+#         mov_shared(0, j)
+#         # fill with thread indexes
+#         load_vector(4, 0)
+
+#         # divide r4 by 256
+#         mov_vector(5, np.float16(256))
+#         div_vector(0, 4, 5)
+
+#         mov_vector(1, get_half(i))
+#         mov_vector(2, get_half(0))
+#         mov_vector(3, get_half(1))
+#         mov_shared(0, j)
+#         mov_shared(1, i)
+#         writeVectorPixels()
+
+mov r2, 0 # no blue
+mov r3, 0 # no depth
+mov r5, 255 # r5 = 255
+
+// # (0, 0)
+// movs s_r0, 0 # x = 0
+// movs s_r1, 0 # y = 0
+// ld r4, s_r0 # r4 = mem[0] = 0-31 lookup table
+// div r0, r4, r5 # r0 = r4 / r5 scales from 0-255 to 0-1
+// mov r1, 0 # y = 0
+// wrscreen # write pixel
+
+movs s_r0, 0 # x = 0
+movs s_r1, 0 # y = 0
+movs s_r4, 32 # amount to increment
+movs s_r5, 240 # max x
+
+pushmask
+movl r8, s_r0 # r8 = x = s_r0
+movl r9, s_r5 # r9 = max x = s_r5
+movidx r10 # r10 = thread index
+add r8, r8, r10 # r8 = x + thread index
+// lts s_r2, s_r0, s_r5 # s_r2 = s_r0 < s_r5
+lt r8, r8, r9 # r8 = (bool) r8 < r9
+// andmasks s_r2 # ands the current mask with s_r2
+andmask r8 # ands the current mask with r8
+while_start:
+//do stuff
+
+ld r4, s_r0 # r4 = mem[0] = 0-31 lookup table
+div r0, r4, r5 # r0 = r4 / r5 scales from 0-255 to 0-1
+mov r1, 0 # y = 0
+wrscreen # write pixel
+
+// increment x
+adds s_r0, s_r0, s_r4 # s_r0 = s_r0 + s_r4
+movl r8, s_r0 # r8 = x = s_r0
+movl r9, s_r5 # r9 = max x = s_r5
+movidx r10 # r10 = thread index
+add r8, r8, r10 # r8 = x + thread index
+// check if x < 256
+// lts s_r2, s_r0, s_r5 # s_r2 = s_r0 < s_r5
+lt r8, r8, r9 # r8 = (bool) r8 < r9
+// andmasks s_r2 # ands the current mask with s_r2
+andmask r8 # ands the current mask with r8
+jmpmask while_start # jump if any of the mask is enabled
+while_end:
+popmask
+
+
+; # (0, 200)
+; movs s_r0, 0 # x = 0
+; movs s_r1, 200 # y = 200
+; ld r4, s_r0 # r4 = mem[0] = 0-31 lookup table
+; div r0, r4, r5 # r0 = r4 / r5 scales from 0-255 to 0-1
+; mov r1, 200 # y = 200
+; wrscreen # write pixel
+
+; # (200, 0)
+; movs s_r0, 200 # x = 200
+; movs s_r1, 0 # y = 0
+; ld r4, s_r0 # r4 = mem[0] = 0-31 lookup table
+; div r0, r4, r5 # r0 = r4 / r5 scales from 0-255 to 0-1
+; mov r1, 0 # y = 0
+; wrscreen # write pixel
+
+; # (200, 200)
+; movs s_r0, 200 # x = 200
+; movs s_r1, 200 # y = 200
+; ld r4, s_r0 # r4 = mem[0] = 0-31 lookup table
+; div r0, r4, r5 # r0 = r4 / r5 scales from 0-255 to 0-1
+; mov r1, 200 # y = 200
+; wrscreen # write pixel

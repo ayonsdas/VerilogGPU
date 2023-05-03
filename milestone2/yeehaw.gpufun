@@ -1,0 +1,321 @@
+blue = 0
+depth = 0
+
+# first triangle
+int t1x1s = 32
+int t1y1s = 32
+int t1x2s = 128
+int t1y2s = 16
+int t1x3s = 64
+int t1y3s = 64
+
+# find max x
+int zeroi = 0
+int maxX = 0
+adds maxX, zeroi, t1x1s
+int challenge = 0
+adds challenge, zeroi, t1x2s
+int booli = 0
+vec bool = 0
+
+gts booli, challenge, maxX
+bool = booli 
+if(bool){
+    adds maxX, zeroi, challenge
+}
+adds challenge, zeroi, t1x3s
+gts booli, challenge, maxX
+bool = booli
+if(bool){
+    adds maxX, zeroi, challenge
+}
+
+# find max y
+int maxY = 0
+adds maxY, zeroi, t1y1s
+adds challenge, zeroi, t1y2s
+gts booli, challenge, maxY
+bool = booli
+if(bool){
+    adds maxY, zeroi, challenge
+}
+adds challenge, zeroi, t1y3s
+gts booli, challenge, maxY
+bool = booli
+if(bool){
+    adds maxY, zeroi, challenge
+}
+
+# find min x
+int minX = 0
+adds minX, zeroi, t1x1s
+adds challenge, zeroi, t1x2s
+lts booli, challenge, minX
+bool = booli
+if(bool){
+    adds minX, zeroi, challenge
+}
+adds challenge, zeroi, t1x3s
+lts booli, challenge, minX
+bool = booli
+if(bool){
+    adds minX, zeroi, challenge
+}
+
+# find min y
+int minY = 0
+adds minY, zeroi, t1y1s
+adds challenge, zeroi, t1y2s
+lts booli, challenge, minY
+bool = booli
+if(bool){
+    adds minY, zeroi, challenge
+}
+adds challenge, zeroi, t1y3s
+lts booli, challenge, minY
+bool = booli
+if(bool){
+    adds minY, zeroi, challenge
+}
+
+# clean up
+deli zeroi
+deli challenge
+deli booli
+delv bool
+
+
+// x = minX
+x = 0
+y = 0
+int zeroi = 0
+adds x, zeroi, minX
+adds y, zeroi, minY
+deli zeroi
+// y = minY
+int increment = 32 # amount to increment
+int yIncrement = 1 # amount to increment y
+
+
+vec t1maxY = 0
+t1maxY = maxY
+vec yV = 0
+yV = y
+vec yInBound = 0
+lte yInBound, yV, t1maxY # yInBound = (bool) y < 255
+delv t1maxY
+while(yInBound){
+    
+    // x = minX
+    int zeroi = 0
+    adds x, zeroi, minX
+    deli zeroi
+
+    vec xV = 0
+    vec threadId = 0
+    vec xInBound = 0
+    xV = x
+    movidx threadId # threadId = thread index
+    add xV, xV, threadId # xV = x + thread index
+    vec t1maxX = 0
+    t1maxX = maxX
+    lte xInBound, xV, t1maxX
+    delv t1maxX
+    delv threadId
+    while(xInBound){
+        vec scale255 = 255
+        div red, xV, scale255
+        green = y
+        div green, green, scale255
+        delv scale255
+
+        // vec threadLower = 0
+        // vec halfThread = 8
+        // lt threadLower, threadId, halfThread # threadLower = (bool) threadId <= 16
+        // # make blue if thread index is less than 16
+        // if(threadLower){
+        //     blue = 1
+        // } else {
+        //     blue = 0
+        // }
+        # we are going to mask by barycentric weight
+        pushmask
+
+        # compute vertex weights per pixel
+        # get vertex 1 and 2
+        vec tx1 = 0
+        tx1 = t1x1s
+        vec ty1 = 0
+        ty1 = t1y1s
+        vec tx2 = 0
+        tx2 = t1x2s
+        vec ty2 = 0
+        ty2 = t1y2s
+        # compute barycentric weight
+        # formula: (bx-ax)(cy-ay) - (by-ay)(cx-ax)
+        # let a = (tx1, ty1)
+        # let b = (tx2, ty2)
+        # let c = (xV, yV)
+        vec bx_ax = 0 # bx-ax
+        # bx_ax = tx2 - tx1
+        sub bx_ax, tx2, tx1
+        vec cy_ay = 0 # cy-ay
+        # cy_ay = yV - ty1
+        sub cy_ay, yV, ty1
+        vec barycentricWeight = 0
+        # barycentricWeight = bx_ax * cy_ay
+        mul barycentricWeight, bx_ax, cy_ay
+        delv bx_ax
+        delv cy_ay
+        vec by_ay = 0 # by-ay
+        # by_ay = ty2 - ty1
+        sub by_ay, ty2, ty1
+        vec cx_ax = 0 # cx-ax
+        # cx_ax = xV - tx1
+        sub cx_ax, xV, tx1
+        # barycentricWeight = barycentricWeight - by_ay * cx_ax
+        vec temp = 0
+        mul temp, by_ay, cx_ax
+        sub barycentricWeight, barycentricWeight, temp
+        delv by_ay
+        delv cx_ax
+        delv temp
+        delv tx1
+        delv ty1
+        delv tx2
+        delv ty2
+
+        # for now, just mask on barycentric weight is positive
+        vec zero = 0
+        # reuse barycentricWeight as bool
+        gt barycentricWeight, barycentricWeight, zero
+        andmask barycentricWeight
+        delv zero
+        # for now, free barycentric weight
+        delv barycentricWeight
+
+        # the second barycentric weight
+        # get vertex 2 and 3
+        vec tx2 = t1x2s
+        vec ty2 = t1y2s
+        vec tx3 = t1x3s
+        vec ty3 = t1y3s
+        # compute barycentric weight
+        # formula: (bx-ax)(cy-ay) - (by-ay)(cx-ax)
+        # let a = (tx2, ty2)
+        # let b = (tx3, ty3)
+        # let c = (xV, yV)
+        vec bx_ax = 0 # bx-ax
+        # bx_ax = tx3 - tx2
+        sub bx_ax, tx3, tx2
+        vec cy_ay = 0 # cy-ay
+        # cy_ay = yV - ty2
+        sub cy_ay, yV, ty2
+        vec barycentricWeight2 = 0
+        # barycentricWeight2 = bx_ax * cy_ay
+        mul barycentricWeight2, bx_ax, cy_ay
+        delv bx_ax
+        delv cy_ay
+        vec by_ay = 0 # by-ay
+        # by_ay = ty3 - ty2
+        sub by_ay, ty3, ty2
+        vec cx_ax = 0 # cx-ax
+        # cx_ax = xV - tx2
+        sub cx_ax, xV, tx2
+        # barycentricWeight2 = barycentricWeight2 - by_ay * cx_ax
+        vec temp = 0
+        mul temp, by_ay, cx_ax
+        sub barycentricWeight2, barycentricWeight2, temp
+        delv by_ay
+        delv cx_ax
+        delv temp
+        delv tx2
+        delv ty2
+        delv tx3
+        delv ty3
+
+        # for now, just mask on barycentric weight is positive
+        vec zero = 0
+        # reuse barycentricWeight as bool
+        gt barycentricWeight2, barycentricWeight2, zero
+        andmask barycentricWeight2
+        delv zero
+        # for now, free barycentric weight
+        delv barycentricWeight2
+
+        # the third barycentric weight
+        # get vertex 3 and 1
+        vec tx3 = t1x3s
+        vec ty3 = t1y3s
+        vec tx1 = t1x1s
+        vec ty1 = t1y1s
+        # compute barycentric weight
+        # formula: (bx-ax)(cy-ay) - (by-ay)(cx-ax)
+        # let a = (tx3, ty3)
+        # let b = (tx1, ty1)
+        # let c = (xV, yV)
+        vec bx_ax = 0 # bx-ax
+        # bx_ax = tx1 - tx3
+        sub bx_ax, tx1, tx3
+        vec cy_ay = 0 # cy-ay
+        # cy_ay = yV - ty3
+        sub cy_ay, yV, ty3
+        vec barycentricWeight3 = 0
+        # barycentricWeight3 = bx_ax * cy_ay
+        mul barycentricWeight3, bx_ax, cy_ay
+        delv bx_ax
+        delv cy_ay
+        vec by_ay = 0 # by-ay
+        # by_ay = ty1 - ty3
+        sub by_ay, ty1, ty3
+        vec cx_ax = 0 # cx-ax
+        # cx_ax = xV - tx3
+        sub cx_ax, xV, tx3
+        # barycentricWeight3 = barycentricWeight3 - by_ay * cx_ax
+        vec temp = 0
+        mul temp, by_ay, cx_ax
+        sub barycentricWeight3, barycentricWeight3, temp
+        delv by_ay
+        delv cx_ax
+        delv temp
+        delv tx3
+        delv ty3
+        delv tx1
+        delv ty1
+
+        # for now, just mask on barycentric weight is positive
+        vec zero = 0
+        # reuse barycentricWeight as bool
+        gt barycentricWeight3, barycentricWeight3, zero
+        andmask barycentricWeight3
+        delv zero
+        # for now, free barycentric weight
+        delv barycentricWeight3
+
+        wrscreen # write pixel
+
+        # restore the mask before barycentric weight masking
+        popmask
+
+        // increment x
+        adds x, x, increment
+        xV = x
+        vec threadId = 0
+        movidx threadId # threadId = thread index
+        add xV, xV, threadId # xV = x + thread index
+        vec t1maxX = 0
+        t1maxX = maxX
+        lte xInBound, xV, t1maxX
+        delv t1maxX
+        delv threadId
+    }
+
+    // increment y
+    adds y, y, yIncrement
+    yV = y
+    vec t1maxY = 0
+    t1maxY = maxY
+    lte yInBound, yV, t1maxY # yInBound = (bool) y < 255
+    delv t1maxY
+}
+publish
